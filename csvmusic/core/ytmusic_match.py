@@ -16,6 +16,10 @@ def _norm_text(s: str) -> str:
 	text = unicodedata.normalize("NFKC", (s or "").casefold())
 	return re.sub(r"\s+", " ", text).strip()
 
+def _is_clean(cand: Dict) -> bool:
+	titleblob = _norm_text((cand.get("title") or "") + " " + (cand.get("author") or ""))
+	return bool(re.search(r'\bclean\b', titleblob))
+
 def _toks(s: str) -> set:
 	text = _norm_text(s)
 	return {tok for tok in re.findall(r"\w+", text, flags=re.UNICODE) if any(ch.isalnum() for ch in tok)}
@@ -216,6 +220,8 @@ def _rank_candidates(yt: YTMusic, track: Dict, limit: int = SEARCH_LIMIT, source
 		for cand in cands:
 			vid = cand.get("videoId")
 			if not vid or vid in seen_vids:
+				continue
+			if _is_clean(cand):
 				continue
 			seen_vids.add(vid)
 			all_cands.append(cand)
